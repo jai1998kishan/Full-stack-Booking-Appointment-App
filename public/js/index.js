@@ -1,55 +1,142 @@
-function saveToLocalStorage(event) {
-  event.preventDefault();
+const axiosInstance = axios.create({
+  baseURL: "http://localhost:4000/user",
+});
+var curr = null;
+let form = document.getElementById("my-form");
 
-  const username = event.target.username.value;
-  console.log(username);
-  const email = event.target.email.value;
-  const phonenumber = event.target.phonenumber.value;
+form.addEventListener("submit", handleSubmit);
+window.addEventListener("load", () => {
+  renderElements();
+});
 
-  const obj = {
-    username,
-    email,
-    phonenumber,
-  };
+async function handleSubmit(e) {
+  e.preventDefault();
 
-  axios
-    .post("http://localhost:4000/user", obj)
-    .then((res) => {
-      console.log(res);
-      showuseronscreen(res.data.newUser);
-    })
-    .catch((err) => {
-      document.body.innerHTML =
-        document.body.innerHTML + "<h4> Somethinh went wrong </h4>";
-      console.log(err);
-    });
+  try {
+    const data = {
+      name: e.target.name.value,
+      email: e.target.email.value,
+      phone: e.target.phone.value,
+    };
+
+    console.log(JSON.stringify(data));
+    let res;
+    let id = document.querySelector('input[type="submit"]').id;
+    if (id) {
+      res = await axiosInstance.put(`/${id}`, data);
+    } else {
+      res = await axiosInstance.post("/", data);
+      id = res.data.id;
+    }
+    let elem = document.querySelector('input[type="submit"]').dataset.elem;
+    console.log(res);
+
+    e.target.name.value = "";
+    e.target.email.value = "";
+    e.target.phone.value = "";
+    let ul = document.getElementById("users");
+    let li = document.createElement("li");
+    li.className = "item";
+    let span = document.createElement("span");
+    span.textContent = `Name : ${data.name} Email : ${data.email}
+   phone number : ${data.phone}`;
+    li.appendChild(span);
+    let div = document.createElement("div");
+
+    let edit = document.createElement("button");
+    edit.className = "edit";
+    edit.textContent = "edit";
+    edit.id = id;
+    div.appendChild(edit);
+    let deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete";
+    deleteBtn.textContent = "delete";
+    deleteBtn.id = id;
+    div.appendChild(deleteBtn);
+    li.appendChild(div);
+
+    if (curr !== null) {
+      ul.insertBefore(li, curr);
+      document.querySelector('input[type="submit"]').id = "";
+      curr = null;
+    } else {
+      ul.appendChild(li);
+    }
+  } catch (e) {
+    console.log(e);
+  }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  axios.get("http://localhost:4000/user/get-user").then((res) => {
-    console.log(res);
-    for(var i=0;i<res.data.allUsers.length; i++){
-      showuseronscreen(res.data.allUsers[i]);
+async function renderElements() {
+  try {
+    const users = await axiosInstance.get();
+    console.log(users);
+    let ul = document.getElementById("users");
+    ul.innerHTML = ``;
+    users.data.data.forEach((user, index) => {
+      let li = document.createElement("li");
+      li.className = "item";
+      let span = document.createElement("span");
+      span.textContent = `Name : ${user.name} Email : ${user.email}
+      phone number : ${user.phone}`;
+      li.appendChild(span);
+      let div = document.createElement("div");
+
+      let edit = document.createElement("button");
+      edit.className = "edit";
+      edit.textContent = "edit";
+      edit.id = user.id;
+      div.appendChild(edit);
+      let deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete";
+      deleteBtn.textContent = "delete";
+      deleteBtn.id = user.id;
+      div.appendChild(deleteBtn);
+      li.appendChild(div);
+      ul.appendChild(li);
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+var dl = document.getElementById("users");
+dl.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("delete")) {
+    let id = e.target.id;
+    let res = await axiosInstance.delete(`/${id}`);
+
+    if (res.status === 200) {
+      let ul = document.getElementById("users");
+
+      ul.removeChild(e.target.parentNode.parentNode);
     }
-  }).catch((err) => {
-    console.log(err);
-  })
-})
-
-function showuseronscreen(user) {
-  document.getElementById("email").value = "";
-  document.getElementById("username").value = "";
-  document.getElementById("phonenumber").value = "";
-
-  if(localStorage.getItem(user.email) != null){
-    removeUserFromScreen(user.email);
   }
 
-  const parentNode = document.getElementById("listOfUsers");
-  const childHTML = `<li id=${user.id}> ${user.username} - ${user.email} - ${user.phonenumber}
-                    <button onclick=deleteUser('${user.id}')> Delete User</button>    
-                    <button onclick=editsUserDetails('${user.id}','${user.username}','${user.email}','${user.phonenumber}')> Edit User</button>    
-                    </li>`;
+  if (e.target.classList.contains("edit")) {
+    let elem = e.target.parentNode.parentNode;
+    let ul = document.getElementById("users");
+    let li = e.target.parentElement.parentElement;
+    curr = li.nextElementSibling;
+    let str = elem.textContent;
+    console.log(str);
+    console.log(elem);
+    document.getElementById("name").value = str.substring(
+      7,
+      str.indexOf("Email") - 1
+    );
+    document.getElementById("email").value = str.substring(
+      str.indexOf("Email") + 8,
+      str.indexOf("phone number") - 1
+    );
+    document.getElementById("phone").value = str.substring(
+      str.indexOf("phone number") + 15,
+      str.lastIndexOf("edit")
+    );
+    console.log(e.target.id);
+    document.querySelector('input[type="submit"]').id = e.target.id;
 
-  parentNode.innerHTML = parentNode.innerHTML + childHTML;
-}
+    ul.removeChild(li);
+    // li.style.display = ""
+  }
+});

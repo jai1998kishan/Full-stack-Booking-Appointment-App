@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 
 
 
-const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/admin');
 const sequelize = require('./util/database');
 
 const app = express();
@@ -17,15 +17,11 @@ app.use(cors());
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
-
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(adminRoutes);
-
-
-
-
+app.use(userRoutes);
 
 
 sequelize.sync()

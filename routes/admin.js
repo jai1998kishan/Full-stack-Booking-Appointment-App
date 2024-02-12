@@ -1,16 +1,18 @@
-const path = require('path');
+const express = require('express')
+const router = express.Router()
+const userController = require('../controllers/admin');
 
-const express = require('express');
+// const User = require('../model/user')
 
-const adminController = require('../controllers/admin');
-const { Model } = require('sequelize');
 
-const router = express.Router();
+router.get('/' , userController.getUser);
 
-router.get('/user',adminController.getUser);
+router.post('/' , userController.postUser);
 
-router.post('/user/add-users',adminController.postUser);
+router.delete('/:id' , userController.deleteUser);
 
-router.post('/user/get-users',adminController.getUserAfterReload);
+
+router.put('/:id', userController.editeUser);
+
 
 module.exports = router;

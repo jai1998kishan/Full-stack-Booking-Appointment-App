@@ -1,39 +1,83 @@
-const Users = require("../models/users");
+const User = require("../models/user");
 
-exports.getUser = (req, res, next) => {
-  res.render("main", {
-    path: "/user",
-  });
-};
 
-exports.postUser =
-  ("/user/add-users",
-  async (req, res, next) => {
-    try {
-      if (!req.body.phonenumber) {
-        throw new Error("Phone number is mandatory");
-      }
-      const username = req.body.username;
-      console.log("username in controller : " + username);
-      const email = req.body.email;
-      const phonenumber = req.body.phonenumber;
 
-      // console.log('Submitted data:', { username, email, phonenumber });
-
-      const data = await Users.create({
-        username: username,
-        email: email,
-        phonenumber: phonenumber,
-      });
-      res.status(201).json({ newUser: data });
-    } catch (err) {
-      res.status(500).json({
-        error: err,
-      });
-    }
-  });
-
-  exports.getUserAfterReload = (async (req,res,next) => {
-    const users = await Users.finAll();
-    res.status(200).json({allUsers: users});
+exports.getUser = (req,res)=>{
+  User.findAll({
+      raw : true,
+      attributes : ['id' , 'name' ,'email' , 'phone']
+  
+  
   })
+      .then((data)=>{
+      console.log(data)
+      return res.json({data : data})
+  }).catch(e => {
+      console.log(e)
+      return res.status(500).json({data : []})
+  })
+}
+
+exports.postUser = (req,res)=>{
+  const name = req.body.name;
+  const email = req.body.email;
+  const phone = req.body.phone;
+  User.create({
+      name : name , 
+      email : email , 
+      phone : phone
+  },).then(data =>{
+      console.log(data)
+      return res.json({
+          id : data.id,
+          name : data.name,
+          email : data.email,
+          phone : data.phone
+      })
+  }).catch(e =>{
+      console.log(e)
+      return res.status(404).json({success : false , data : {}})
+  })
+}
+
+exports.deleteUser = (req,res)=>{
+  const id = req.params.id;
+
+  User.findByPk(id).then(user =>{
+      return user.destroy()
+  }).then(()=>{
+      return res.json({success : true})
+  }).catch(e =>{
+      console.log(e)
+      return res.status(403).json({success : false})
+  })
+
+}
+
+
+exports.editeUser = (req,res)=>{
+  const id = req.params.id;
+  User.findByPk(id).then((user)=>{
+      user.name = req.body.name,
+      user.email = req.body.email,
+      user.phone = req.body.phone
+      return user.save()
+  }).then((data)=>{
+      return res.json({
+          id : data.id,
+          name : data.name,
+          email : data.email,
+          phone : data.phone
+      })
+  }).catch(e =>{
+      console.log(e)
+      return res.status(403).json({success : false})
+  })
+}
+
+
+
+
+
+
+
